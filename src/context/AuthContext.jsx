@@ -25,9 +25,8 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (username, password, role) => {
-        const url = import.meta.env.VITE_API_BASE_URL;
         try {
-            const response = await axios.post(`${url}/login`, {
+            const response = await axios.post('https://2531ddf8-f3e5-48a3-a856-0a19af7340eb-00-1zhft004frkyw.sisko.replit.dev/login', {
                 username,
                 password,
                 role,

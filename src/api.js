@@ -1,6 +1,6 @@
 import axios from 'axios';
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: "https://2531ddf8-f3e5-48a3-a856-0a19af7340eb-00-1zhft004frkyw.sisko.replit.dev",
 });
 
 api.interceptors.request.use(
