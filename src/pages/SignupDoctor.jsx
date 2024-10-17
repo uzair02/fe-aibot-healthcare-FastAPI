@@ -12,56 +12,65 @@ const RegisterDoctorPage = () => {
   const [lastName, setLastName] = useState('');
   const [specialization, setSpecialization] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
-  const validateForm = () => {
-    const errors = {};
-    if (!username) errors.username = 'Username is required';
-    if (!password) errors.password = 'Password is required';
-    if (!firstName) errors.firstName = 'First name is required';
-    if (!lastName) errors.lastName = 'Last name is required';
-    if (!specialization) errors.specialization = 'Specialization is required';
-    if (!phoneNumber) errors.phoneNumber = 'Phone number is required';
-    return errors;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validateForm();
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    const patientData = {
-        username,
-        password,
-        first_name: firstName,
-        last_name: lastName,
-        specialization,
-        phone_number: phoneNumber,
-    };
-
-    console.log("Registering doctor with data:", patientData);
-    try {
-      await registerDoctor(patientData);
-      Swal.fire({
-        title: 'Registration Successful',
-        text: 'Doctor has been successfully registered.',
-        icon: 'success',
-        timer: 2000,
-        timerProgressBar: true,
+  const showFirstError = (errors) => {
+    if (errors && errors.length > 0) {
+      const firstError = errors[0];
+      const field = firstError.loc[firstError.loc.length - 1];
+      const message = firstError.msg;
+      
+      const toast = Swal.fire({
+        title: `${field.charAt(0).toUpperCase() + field.slice(1)}`,
+        text: message,
+        icon: 'error',
         toast: true,
+        timer: 3000,
+        timerProgressBar: true,
         position: 'top-end',
         showConfirmButton: false,
         background: '#1b1b1b',
         color: '#d8fffb',
-        customClass: {
-          title: 'swal2-title',
-          popup: 'swal2-popup',
-          timerProgressBar: 'green-progress-bar',
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer)
+          toast.addEventListener('mouseleave', Swal.resumeTimer)
         },
+        didClose: () => {
+          // Focus on the input field that has the error
+          const inputElement = document.getElementById(field);
+          if (inputElement) {
+            inputElement.focus();
+          }
+        }
+      });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+    const doctorData = {
+      username,
+      password,
+      first_name: firstName,
+      last_name: lastName,
+      specialization,
+      phone_number: phoneNumber,
+    };
+  
+    try {
+      await registerDoctor(doctorData);
+      Swal.fire({
+        title: 'Registration Successful',
+        text: 'Doctor has been successfully registered.',
+        icon: 'success',
+        toast: true,
+        timer: 3000,
+        timerProgressBar: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        background: '#1b1b1b',
+        color: '#d8fffb',
         didOpen: (toast) => {
           toast.addEventListener('mouseenter', Swal.stopTimer);
           toast.addEventListener('mouseleave', Swal.resumeTimer);
@@ -71,42 +80,81 @@ const RegisterDoctorPage = () => {
         navigate('/login');
       }, 1000);
     } catch (error) {
-      console.error('Registration failed:', error);
-      console.error('Error response:', error.response ? error.response.data : error.message);
-
-      let errorMessage = 'Registration failed. Please try again.';
       if (error.response) {
-        if (error.response.data && Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail.map(err => err.msg).join(', ') || errorMessage;
-        } else if (error.response.data.detail) {
-          errorMessage = error.response.data.detail;
+        const status = error.response.status;
+        const validationErrors = error.response.data.detail;
+  
+        if (status === 422) {
+          // Check if the error relates to unique constraint violation
+          const uniqueError = validationErrors.find(err => 
+            err.msg.toLowerCase().includes('unique')
+          );
+  
+          if (uniqueError) {
+            const field = uniqueError.loc[uniqueError.loc.length - 1];
+            Swal.fire({
+              title: `${field.charAt(0).toUpperCase() + field.slice(1)}`,
+              text: 'This phone number must be unique.',
+              icon: 'error',
+              toast: true,
+              timer: 3000,
+              timerProgressBar: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              background: '#1b1b1b',
+              color: '#d8fffb',
+              didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+              }
+            });
+            // Focus on the input field that has the error
+            const inputElement = document.getElementById(field);
+            if (inputElement) {
+              inputElement.focus();
+            }
+          } else {
+            showFirstError(validationErrors);
+          }
+        } else {
+          Swal.fire({
+            title: 'Registration Failed',
+            text: 'Something went wrong. Please try again.',
+            icon: 'error',
+            toast: true,
+            timer: 3000,
+            timerProgressBar: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            background: '#1b1b1b',
+            color: '#d8fffb',
+            didOpen: (toast) => {
+              toast.addEventListener('mouseenter', Swal.stopTimer);
+              toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+          });
         }
+      } else {
+        Swal.fire({
+          title: 'Registration Failed',
+          text: 'Something went wrong. Please try again.',
+          icon: 'error',
+          toast: true,
+          timer: 3000,
+          timerProgressBar: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          background: '#1b1b1b',
+          color: '#d8fffb',
+          didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+          }
+        });
       }
-
-      Swal.fire({
-        title: 'Registration Failed',
-        text: errorMessage,
-        icon: 'error',
-        toast: true,
-        timer: 3000,
-        timerProgressBar: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        background: '#1b1b1b',
-        color: '#d8fffb',
-        customClass: {
-          title: 'swal2-title',
-          popup: 'swal2-popup',
-          timerProgressBar: 'red-progress-bar',
-        },
-        didOpen: (toast) => {
-          toast.addEventListener('mouseenter', Swal.stopTimer);
-          toast.addEventListener('mouseleave', Swal.resumeTimer);
-        }
-      });
     }
   };
-
+  
   return (
     <div className="container-fluid d-flex flex-column justify-content-center align-items-center text-light">
       <Helmet>
@@ -121,90 +169,66 @@ const RegisterDoctorPage = () => {
           <label htmlFor="username" className="form-label label" style={{ fontSize: '0.875rem' }}>Enter username</label>
           <input
             type="text"
-            className={`form-control bg-dark text-light border-0 ${errors.username ? 'is-invalid' : ''}`}
+            className="form-control bg-dark text-light border-0"
             id="username"
             value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              setErrors((prevErrors) => ({ ...prevErrors, username: '' }));
-            }}
+            onChange={(e) => setUsername(e.target.value)}
           />
-          {errors.username && <div className="invalid-feedback">{errors.username}</div>}
         </div>
         
         <div className="mb-1 mt-1">
           <label htmlFor="firstName" className="form-label label" style={{ fontSize: '0.875rem' }}>First Name</label>
           <input
             type="text"
-            className={`form-control bg-dark text-light border-0 ${errors.firstName ? 'is-invalid' : ''}`}
+            className="form-control bg-dark text-light border-0"
             id="firstName"
             value={firstName}
-            onChange={(e) => {
-              setFirstName(e.target.value);
-              setErrors((prevErrors) => ({ ...prevErrors, firstName: '' }));
-            }}
+            onChange={(e) => setFirstName(e.target.value)}
           />
-          {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
         </div>
 
         <div className="mb-1 mt-1">
           <label htmlFor="lastName" className="form-label label" style={{ fontSize: '0.875rem' }}>Last Name</label>
           <input
             type="text"
-            className={`form-control bg-dark text-light border-0 ${errors.lastName ? 'is-invalid' : ''}`}
+            className="form-control bg-dark text-light border-0"
             id="lastName"
             value={lastName}
-            onChange={(e) => {
-              setLastName(e.target.value);
-              setErrors((prevErrors) => ({ ...prevErrors, lastName: '' }));
-            }}
+            onChange={(e) => setLastName(e.target.value)}
           />
-          {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
-        </div>
-
-        <div className="mb-1 mt-1">
-          <label htmlFor="phoneNumber" className="form-label label" style={{ fontSize: '0.875rem' }}>Phone Number</label>
-          <input
-            type="text"
-            className={`form-control bg-dark text-light border-0 ${errors.phoneNumber ? 'is-invalid' : ''}`}
-            id="phoneNumber"
-            value={phoneNumber}
-            onChange={(e) => {
-              setPhoneNumber(e.target.value);
-              setErrors((prevErrors) => ({ ...prevErrors, phoneNumber: '' }));
-            }}
-          />
-          {errors.phoneNumber && <div className="invalid-feedback">{errors.phoneNumber}</div>}
         </div>
 
         <div className="mb-1 mt-1">
           <label htmlFor="specialization" className="form-label label" style={{ fontSize: '0.875rem' }}>Specialization</label>
           <input
             type="text"
-            className={`form-control bg-dark text-light border-0 ${errors.specialization ? 'is-invalid' : ''}`}
+            className="form-control bg-dark text-light border-0"
             id="specialization"
             value={specialization}
-            onChange={(e) => {
-              setSpecialization(e.target.value);
-              setErrors((prevErrors) => ({ ...prevErrors, specialization: '' }));
-            }}
+            onChange={(e) => setSpecialization(e.target.value)}
           />
-          {errors.specialization && <div className="invalid-feedback">{errors.specialization}</div>}
+        </div>
+
+        <div className="mb-1 mt-1">
+          <label htmlFor="phoneNumber" className="form-label label" style={{ fontSize: '0.875rem' }}>Phone Number</label>
+          <input
+            type="text"
+            className="form-control bg-dark text-light border-0"
+            id="phoneNumber"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+          />
         </div>
 
         <div className="mb-3 mt-1">
           <label htmlFor="password" className="form-label label" style={{ fontSize: '0.875rem' }}>Enter password</label>
           <input
             type="password"
-            className={`form-control bg-dark text-light border-0 mb-4 ${errors.password ? 'is-invalid' : ''}`}
+            className="form-control bg-dark text-light border-0 mb-4"
             id="password"
             value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setErrors((prevErrors) => ({ ...prevErrors, password: '' }));
-            }}
+            onChange={(e) => setPassword(e.target.value)}
           />
-          {errors.password && <div className="invalid-feedback">{errors.password}</div>}
         </div>
         
         <button type="submit" className="btn btn-primary w-100 mt-1">
@@ -213,6 +237,6 @@ const RegisterDoctorPage = () => {
       </form>
     </div>
   );
-}
+};
 
 export default RegisterDoctorPage;
