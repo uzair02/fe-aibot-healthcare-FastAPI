@@ -53,5 +53,3 @@ The frontend application should now be accessible at `http://localhost:5173/`.
 - **CSS**: Styling
 
 ---
-
-Feel free to customize this README as your project evolves. Happy coding!
