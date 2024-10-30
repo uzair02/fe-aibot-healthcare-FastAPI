@@ -53,3 +53,5 @@ The frontend application should now be accessible at `http://localhost:5173/`.
 - **CSS**: Styling
 
 ---
+
+**Project developed by Chemsa Technologies**
