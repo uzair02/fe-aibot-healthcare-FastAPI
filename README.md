@@ -42,7 +42,7 @@ To start the development server, run:
 npm run dev
 ```
 
-The frontend application should now be accessible at `http://localhost:3000`.
+The frontend application should now be accessible at `http://localhost:5173/`.
 
 ---
 
